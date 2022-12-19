@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "youtube-video-tags-grabber"
+version = "0.1.0"
+description = ""
+authors = ["Ilia Kaziamov <ilya.kazyamov@gmail.com>"]
+readme = "README.md"
+packages = [{include = "youtube_video_tags_grabber"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.28.1"
+beautifulsoup4 = "^4.11.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
