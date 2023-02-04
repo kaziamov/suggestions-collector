@@ -18,17 +18,14 @@ class Collector():
     }
     URL = None
 
-    def __init__(self, query):
+    def __init__(self, queries):
         self._language_ = 'en'
         self._region_ = 'EN'
-        self.query = query
+        self.queries = queries
+        self.result = []
 
     def _get_request(self):
         pass
-
-    def collect(self):
-        self._get_request()
-        return self
 
     def set_options(self, extend=False, deep=False):
         self.extend = extend
@@ -47,6 +44,16 @@ class Collector():
         self.letters = ascii_letters + digits
         return self
 
+    def collect(self):
+        if self.extend:
+            self.extend_queries = []
+            for q in self.queries:
+                self.extend_queries.extend([f"{q} {symbol}" for symbol in self.letters])
+            self.queries = self.extend_queries
+        # for qyery in self.queries:
+            # self._get_request(qyery)
+        return self
+
     def save_to_txt(self, filename='result', prefix=None):
         filename = make_clear_name(filename)
         dir = os.path.join(f'{filename}.txt')
@@ -59,9 +66,9 @@ class YoutubeCollector(Collector):
     def __init__(self, query):
         super().__init__(query)
 
-    def _get_request(self):
+    def _get_request(self, query):
         suggestions = Suggestions(language = self._language_, region = self._region_)
-        self.result = json.loads(suggestions.get(self.query, mode = ResultMode.json))['result']
+        self.result.append(json.loads(suggestions.get(query, mode = ResultMode.json))['result'])
         return self
 
 
@@ -141,6 +148,8 @@ def load_keywords(filepath='Keywords.txt'):
 
 
 if __name__ == '__main__':
-    q = 'как в фигма'
+    q = ['как в фигма']
     c = YoutubeCollector(query=q)
-    c.set_ru_region().set_options(extend=True).collect().save_to_txt()
+    print(c.queries)
+    c.set_ru_region().set_options(extend=True).collect()
+    print(c.queries)
