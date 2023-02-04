@@ -50,15 +50,17 @@ class Collector():
             for q in self.queries:
                 self.extend_queries.extend([f"{q} {symbol}" for symbol in self.letters])
             self.queries = self.extend_queries
-        # for qyery in self.queries:
-            # self._get_request(qyery)
+        for qyery in self.queries:
+            self._get_request(qyery)
         return self
 
     def save_to_txt(self, filename='result', prefix=None):
         filename = make_clear_name(filename)
         dir = os.path.join(f'{filename}.txt')
+        to_save = list(itertools.chain(*self.result))
+        to_save.sort()
         with open(dir, 'w', encoding='utf-8') as new_file:
-            new_file.writelines(map(lambda x: f'{x}\n', self.result))
+            new_file.writelines(map(lambda x: f'{x}\n', to_save))
 
 
 class YoutubeCollector(Collector):
@@ -151,5 +153,5 @@ if __name__ == '__main__':
     q = ['как в фигма']
     c = YoutubeCollector(query=q)
     print(c.queries)
-    c.set_ru_region().set_options(extend=True).collect()
+    c.set_ru_region().set_options(extend=True).collect().save_to_txt()
     print(c.queries)
