@@ -6,6 +6,9 @@ import requests
 from bs4 import BeautifulSoup
 from youtubesearchpython import ResultMode, Suggestions
 
+from string import ascii_letters, digits
+
+cyrillic_letters = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
 
 class Collector():
 
@@ -15,39 +18,51 @@ class Collector():
     }
     URL = None
 
-    def __init__(self):
+    def __init__(self, query):
         self._language_ = 'en'
         self._region_ = 'EN'
+        self.query = query
 
-    def _get_request(self, search_query):
+    def _get_request(self):
         pass
 
-    def collect(self, search_query):
-        return self._get_request(search_query)
+    def collect(self):
+        self._get_request()
+        return self
+
+    def set_options(self, extend=False, deep=False):
+        self.extend = extend
+        self.deep = deep
+        return self
 
     def set_ru_region(self):
         self._language_ = 'ru'
         self._region_ = 'RU'
+        self.letters = cyrillic_letters + digits
+        return self
 
     def set_en_region(self):
         self._language_ = 'en'
         self._region_ = 'EN'
+        self.letters = ascii_letters + digits
+        return self
 
-    def save_to_txt(self, filename, lines, prefix=None):
+    def save_to_txt(self, filename='result', prefix=None):
         filename = make_clear_name(filename)
         dir = os.path.join(f'{filename}.txt')
         with open(dir, 'w', encoding='utf-8') as new_file:
-            new_file.writelines(map(lambda x: f'{x}\n', lines))
+            new_file.writelines(map(lambda x: f'{x}\n', self.result))
 
 
 class YoutubeCollector(Collector):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, query):
+        super().__init__(query)
 
-    def _get_request(self, search_query):
+    def _get_request(self):
         suggestions = Suggestions(language = self._language_, region = self._region_)
-        return json.loads(suggestions.get(search_query, mode = ResultMode.json))['result']
+        self.result = json.loads(suggestions.get(self.query, mode = ResultMode.json))['result']
+        return self
 
 
 class GoogleCollector(Collector):
@@ -126,4 +141,6 @@ def load_keywords(filepath='Keywords.txt'):
 
 
 if __name__ == '__main__':
-    pass
+    q = 'как в фигма'
+    c = YoutubeCollector(query=q)
+    c.set_ru_region().set_options(extend=True).collect().save_to_txt()
