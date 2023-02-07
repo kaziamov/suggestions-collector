@@ -1,7 +1,9 @@
 import itertools
 import json
 import os
-
+import aiohttp
+import asyncio
+import time
 import requests
 from bs4 import BeautifulSoup
 from youtubesearchpython import ResultMode, Suggestions
@@ -23,6 +25,7 @@ class Collector():
         self._region_ = 'EN'
         self.queries = queries
         self.result = []
+        self.session = requests.Session()
 
     def _get_request(self):
         pass
@@ -46,7 +49,7 @@ class Collector():
 
     def collect(self):
         if self.extend:
-            self.extend_queries = []
+            self.extend_queries = self.queries.copy()
             for q in self.queries:
                 self.extend_queries.extend([f"{q} {symbol}" for symbol in self.letters])
             self.queries = self.extend_queries
@@ -54,23 +57,59 @@ class Collector():
             self._get_request(qyery)
         return self
 
-    def save_to_txt(self, filename='result', prefix=None):
-        filename = make_clear_name(filename)
+    async def _async_get_request(self, query):
+        return self
+
+    async def async_collect(self):
+        # async with aiohttp.ClientSession() as session:
+        for q in self.queries:
+            task = self._async_get_request(q)
+            self.tasks.append(task)
+
+        results = await asyncio.gather(*self.tasks)
+        for r in results:
+            self.result.append(r)
+        print(self.result)
+        await self.session.close()
+        return self
+
+
+    def save_to_txt(self):
+        # filename = make_clear_name(filename)
+        filename = self.queries[0]
         dir = os.path.join(f'{filename}.txt')
-        to_save = list(itertools.chain(*self.result))
-        to_save.sort()
+        to_save = set(itertools.chain(*self.result))
+        to_save = sorted(to_save)
         with open(dir, 'w', encoding='utf-8') as new_file:
             new_file.writelines(map(lambda x: f'{x}\n', to_save))
+
+    # def _get_query_params(self.)
 
 
 class YoutubeCollector(Collector):
 
+    URL = 'http://suggestqueries.google.com/complete/search?client=youtube&ds=yt&client=firefox&q={}'
+
     def __init__(self, query):
         super().__init__(query)
 
+    async def _async_get_request(self, query):
+        suggestions = Suggestions(language = self._language_, region = self._region_)
+        self.result.append(suggestions.get(query, mode = ResultMode.json)['result'])
+        return self
+
     def _get_request(self, query):
         suggestions = Suggestions(language = self._language_, region = self._region_)
-        self.result.append(json.loads(suggestions.get(query, mode = ResultMode.json))['result'])
+        response = self.session.get(YoutubeCollector.URL.format(query))
+        # options = {'hl': self.language,
+        #     'gl': self.region,
+        #     'q': query,
+        #     'client': 'youtube',
+        #     'gs_ri': 'youtube',
+        #     'ds': 'yt',}
+        # self.result.append(json.loads(suggestions.get(query, mode = ResultMode.json))['result'])
+        result = response.json()
+        self.result.append(result[1])
         return self
 
 
@@ -83,8 +122,10 @@ class GoogleCollector(Collector):
 
 
     def _get_request(self, search_query):
-        response = requests.get(GoogleCollector.URL.format(search_query), headers=GoogleCollector.HEADERS)
-        return json.loads(response.text)[1]
+        response = self.session.get(GoogleCollector.URL.format(search_query), headers=GoogleCollector.HEADERS)
+        result = response.json()
+        self.result.append(result[1])
+        return self
 
 
 class Parsing():
@@ -129,7 +170,6 @@ def make_deep_collect(action, keyword, sorting=False):
 #     return result[1]
 
 
-
 def get_youtube_tags(url):
     request = requests.get(url)
     html = BeautifulSoup(request.content,"html.parser")
@@ -150,8 +190,12 @@ def load_keywords(filepath='Keywords.txt'):
 
 
 if __name__ == '__main__':
-    q = ['как в фигма']
+    q = ['как в фигме ']
     c = YoutubeCollector(query=q)
     print(c.queries)
-    c.set_ru_region().set_options(extend=True).collect().save_to_txt()
-    print(c.queries)
+    start = time.perf_counter()
+    c.set_ru_region().set_options(extend=True).collect()
+    # asyncio.run(c.async_collect())
+    print("Time: {}".format(time.perf_counter() - start))
+    c.save_to_txt()
+    # print(c.queries)
