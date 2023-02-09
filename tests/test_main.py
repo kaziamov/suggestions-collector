@@ -1,5 +1,5 @@
 import pytest
-from predictions_collector import generate_aliases
+from suggestions_collector import generate_aliases
 
 @pytest.mark.parametrize('tags, origin, alias, expected',
                          (['python requests', 'python amazon', 'python project'], 'python', 'питон',

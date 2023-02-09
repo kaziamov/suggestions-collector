@@ -1,3 +1,5 @@
 *cache*
 .idea/
 .vscode/
+.venv/
+*.txt
