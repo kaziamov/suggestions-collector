@@ -66,3 +66,7 @@
 ## Supporting Documentation
 
 Besides a `README.md`, your repo should contain a `CHANGELOG.md` summarizing major code changes, a `LICENSE.md` describing the code's license (typically Apache 2.0 for our open-source projects, All Rights Reserved for internal projects), and a `notes/` directory that is a git submodule of the project's wiki. See the [style guide for repo organization](https://github.com/roachhd/style_guide/blob/master/style-guide-for-repo-organization.md) for more details.
+
+1
+<video src='https://www.youtube.com/embed/TtTwRjJFZzU' width=180/>
+2

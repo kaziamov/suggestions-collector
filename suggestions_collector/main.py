@@ -1,8 +1,8 @@
 import itertools
 import os
 import time
-# import requests
-import grequests
+import aiohttp
+import asyncio
 from string import ascii_letters, digits
 
 cyrillic_letters = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
@@ -15,7 +15,7 @@ class Collector():
         self._region_ = 'EN'
         self.queries = queries
         self.result = []
-        self.session = grequests.Session()
+        # self.session = aiohttp.ClientSession()
         self.headers = {
             "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582"
@@ -60,9 +60,9 @@ class Collector():
         self.result.append(result[1])
         return self
 
-    def save_to_txt(self):
+    def save_to_txt(self, prefix=""):
         filename = self.queries[0]
-        dir = os.path.join(f'{filename}.txt')
+        dir = os.path.join('results', f'{filename}{prefix}.txt')
         to_save = set(itertools.chain(*self.result))
         to_save = sorted(to_save)
         with open(dir, 'w', encoding='utf-8') as new_file:
@@ -83,11 +83,44 @@ class GoogleCollector(Collector):
         self.url = 'http://google.com/complete/search?client=chrome&q={}'
 
 
+base_url = 'http://suggestqueries.google.com/complete/search?client=youtube&ds=yt&client=firefox&q={}'
+
+async def fetch_result(session, url):
+    async with session.get(url) as result:
+        return await result.json()
+
+
+async def main(queries):
+    async with aiohttp.ClientSession() as session:
+        urls = [f'https://dummyjson.com/products/{num}' for num in list(range(1, 101))]
+        # urls = [f'{base_url}{query}' for query in queries]
+        requests = [fetch_result(session, url) for url in urls]
+        result = await asyncio.gather(*requests, return_exceptions=False)
+        return result
+
+def unpack_result(results):
+    return [r.json() for r in results]
+
 if __name__ == '__main__':
-    q = ['как в фигме ']
-    c = GoogleCollector(queries=q)
-    print(c.queries)
+    basic_words = ['как', "почему", "зачем", "что", "кто"]
+    with open('input_queries.txt', 'r', encoding='utf-8') as file:
+        queries = file.readlines()
+        queries = [f"{word} {f_word}" for word in basic_words for f_word in queries]
+
     start = time.perf_counter()
-    c.set_ru_region().set_options(extend=True).collect()
+    r = asyncio.run(main(queries))
+    print(r)
     print("Time: {}".format(time.perf_counter() - start))
-    c.save_to_txt()
+
+    # q = ['как в английском']
+    # c = GoogleCollector(queries=q)
+    # ext = True
+    # print(c.queries)
+    # # c.set_ru_region().set_options(extend=ext).collect()
+    # # c.save_to_txt(prefix='_Google')
+
+    # c = YoutubeCollector(queries=q)
+    # start = time.perf_counter()
+    # c.set_ru_region().set_options(extend=ext).collect()
+    # print("Time: {}".format(time.perf_counter() - start))
+    # c.save_to_txt(prefix='_Youtube')

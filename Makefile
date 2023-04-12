@@ -1,6 +1,7 @@
 app:
 	poetry run python predictions_collector/collector.py
-
+start:
+	poetry run python suggestions_collector/main.py
 
 full-test:
 	poetry run pytest --show-capture=stdout --showlocals -vv
